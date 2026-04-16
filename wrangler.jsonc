@@ -11,7 +11,7 @@
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "kanicc-w"
+      "bucket_name": "kanicc"
     }
   ]
 }
