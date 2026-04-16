@@ -1,19 +1,17 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "kanicc",
-	"main": "src/index.ts",
-	"compatibility_date": "2026-04-15",
-	"observability": {
-		"enabled": true
-	},
-	"upload_source_maps": true,
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"r2_buckets": [
-		{
-			"binding": "R2",
-			"bucket_name": "kanicc-w"
-		}
-	]
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kanicc",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-15",
+  "observability": {
+    "enabled": true
+  },
+  "upload_source_maps": true,
+  "compatibility_flags": ["nodejs_compat"],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "kanicc-w"
+    }
+  ]
 }

@@ -5,9 +5,7 @@
     "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "allowJs": true,
     "rootDir": "src",
     "outDir": "dist",
@@ -17,5 +15,5 @@
       "emscripten",
       "./src/index.d.ts"
     ]
-  },
+  }
 }
