@@ -35,10 +35,12 @@ export class CompileServer extends DurableObject {
   async handleCompile(): Promise<string> {
     if (this.binaryBase64 != null) return this.binaryBase64;
 
-    const source = await this.getSource();
-    if (source == null) throw "invalid id";
+    if (this.compiled == null) {
+      const source = await this.getSource();
+      if (source == null) throw "invalid id";
 
-    if (this.compiled == null) this.compiled = this.compile(source);
+      this.compiled = this.compile(source);
+    }
     const res = await this.compiled;
     if (res == null) throw "compile failed";
 
