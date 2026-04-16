@@ -8,11 +8,14 @@
     "lib": [
       "ESNext"
     ],
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
+    "allowJs": true,
+    "rootDir": "src",
+    "outDir": "dist",
     "types": [
-        "./worker-configuration.d.ts",
-        "node"
+      "./worker-configuration.d.ts",
+      "node",
+      "emscripten",
+      "./src/index.d.ts"
     ]
   },
 }
