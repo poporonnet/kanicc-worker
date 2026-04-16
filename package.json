@@ -1,5 +1,5 @@
 {
-  "name": "kanicc-w",
+  "name": "kanicc-worker",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
