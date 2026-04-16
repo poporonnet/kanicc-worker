@@ -16,5 +16,21 @@
       "binding": "R2",
       "bucket_name": "kanicc"
     }
-  ]
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "CompileServer",
+        "name": "COMPILE_SERVER",
+      }
+    ]
+  },
+  "migrations": [
+		{
+			"new_sqlite_classes": [
+				"CompileServer"
+			],
+			"tag": "v1"
+		}
+	],
 }

@@ -1,11 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-interface MrbcModule extends EmscriptenModule {
-  FS: typeof FS;
-  callMain: (args: string[]) => number;
-}
-
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 app.use("/*", cors({ origin: "*" }));
@@ -18,12 +13,12 @@ app.post("/code", async (c) => {
   const body = await c.req.json<{ code: string }>();
   const code = body.code;
 
-  const decoded = Uint8Array.fromBase64(code);
+  const source = new TextDecoder().decode(Uint8Array.fromBase64(code));
   const id = crypto.randomUUID();
-  const filename = `${id}.rb`;
+  const server = c.env.COMPILE_SERVER.getByName(id);
 
   try {
-    await c.env.R2.put(filename, decoded);
+    await server.handleUpload(source);
   } catch {
     return c.json(
       {
@@ -42,55 +37,18 @@ app.post("/code", async (c) => {
 
 app.post("/code/:id/compile", async (c) => {
   const id = c.req.param().id;
-  const filename = `${id}.rb`;
+  const server = c.env.COMPILE_SERVER.getByName(id);
 
   try {
-    const file = await c.env.R2.get(filename);
-    if (file == null) {
-      return c.json({
-        status: "invalid id",
-        id: "",
-      });
-    }
-
-    const code = await file.text();
-    const { default: mrbcModule } = (await import("./assets/mrbc")) as {
-      default: EmscriptenModuleFactory<MrbcModule>;
-    };
-    const { default: mrbcWasm } = await import("./assets/mrbc.wasm");
-
-    const errors: string[] = [];
-    const mrbc = await mrbcModule({
-      noInitialRun: true,
-      print: console.log,
-      printErr: (str) => errors.push(str),
-      instantiateWasm: (imports, callback) => {
-        const instance = new WebAssembly.Instance(mrbcWasm, imports);
-        callback(instance);
-        return instance.exports;
-      },
-    });
-
-    mrbc.FS.writeFile("/input.rb", code);
-    mrbc.callMain(["-v"]);
-    const res = mrbc.callMain(["-o", "/output.mrb", "/input.rb"]);
-    if (res !== 0) {
-      return c.json({
-        status: "error",
-        error: errors.join("\n"),
-      });
-    }
-
-    const binary = mrbc.FS.readFile("/output.mrb");
-    const encoded = binary.toBase64();
+    const binary = await server.handleCompile();
     return c.json({
       status: "ok",
-      binary: encoded,
+      binary,
     });
   } catch (err) {
     return c.json(
       {
-        status: "failed to compile",
+        status: err,
         id: "",
       },
       500,
@@ -100,10 +58,10 @@ app.post("/code/:id/compile", async (c) => {
 
 app.get("/code/:id", async (c) => {
   const id = c.req.param().id;
-  const filename = `${id}.rb`;
+  const server = c.env.COMPILE_SERVER.getByName(id);
+  const source = await server.getSource();
 
-  const file = await c.env.R2.get(filename);
-  if (file == null) {
+  if (source == null) {
     return c.json(
       {
         error: "internal error",
@@ -112,12 +70,11 @@ app.get("/code/:id", async (c) => {
     );
   }
 
-  const code = new Uint8Array(await file.arrayBuffer());
-  const encoded = code.toBase64();
-
+  const code = new TextEncoder().encode(source).toBase64();
   return c.json({
-    code: encoded,
+    code,
   });
 });
 
 export default app;
+export { CompileServer } from "./compileServer";
