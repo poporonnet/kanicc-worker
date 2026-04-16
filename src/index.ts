@@ -15,7 +15,7 @@ app.post("/code", async (c) => {
 
   const source = new TextDecoder().decode(Uint8Array.fromBase64(code));
   if (!source) {
-    return c.json({error: "invalid code"}, 400);
+    return c.json({ error: "invalid code" }, 400);
   }
 
   const id = crypto.randomUUID();
