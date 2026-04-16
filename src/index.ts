@@ -14,6 +14,10 @@ app.post("/code", async (c) => {
   const code = body.code;
 
   const source = new TextDecoder().decode(Uint8Array.fromBase64(code));
+  if (!source) {
+    return c.json({error: "invalid code"}, 400);
+  }
+
   const id = crypto.randomUUID();
   const server = c.env.COMPILE_SERVER.getByName(id);
 
@@ -31,7 +35,7 @@ app.post("/code", async (c) => {
 
   return c.json({
     status: "ok",
-    id: id,
+    id,
   });
 });
 
@@ -40,15 +44,11 @@ app.post("/code/:id/compile", async (c) => {
   const server = c.env.COMPILE_SERVER.getByName(id);
 
   try {
-    const binary = await server.handleCompile();
-    return c.json({
-      status: "ok",
-      binary,
-    });
-  } catch (err) {
+    return await server.handleCompile();
+  } catch {
     return c.json(
       {
-        status: err,
+        status: "failed to compile",
         id: "",
       },
       500,

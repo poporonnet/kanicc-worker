@@ -10,7 +10,7 @@ export class CompileServer extends DurableObject {
   private binaryBase64?: string;
   private stdout: string[];
   private stderr: string[];
-  private compiled?: Promise<string | undefined>;
+  private compiled?: Promise<Response>;
 
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
@@ -32,22 +32,32 @@ export class CompileServer extends DurableObject {
     this.ctx.waitUntil(this.compiled);
   }
 
-  async handleCompile(): Promise<string> {
-    if (this.binaryBase64 != null) return this.binaryBase64;
+  async handleCompile(): Promise<Response> {
+    if (this.binaryBase64 != null) {
+      return Response.json({
+        status: "ok",
+        binary: this.binaryBase64,
+      });
+    }
 
     if (this.compiled == null) {
       const source = await this.getSource();
-      if (source == null) throw "invalid id";
+      if (source == null) {
+        return Response.json(
+          {
+            status: "invalid id",
+            id: "",
+          },
+          { status: 400 },
+        );
+      }
 
       this.compiled = this.compile(source);
     }
-    const res = await this.compiled;
-    if (res == null) throw "compile failed";
-
-    return res;
+    return await this.compiled;
   }
 
-  private async compile(source: string): Promise<string | undefined> {
+  private async compile(source: string): Promise<Response> {
     const { default: mrbcModule } = (await import("./assets/mrbc")) as {
       default: EmscriptenModuleFactory<MrbcModule>;
     };
@@ -70,10 +80,19 @@ export class CompileServer extends DurableObject {
 
     mrbc.FS.writeFile("/input.rb", source);
     const res = mrbc.callMain(["-o", "/output.mrb", "/input.rb"]);
-    if (res !== 0) return undefined;
+    if (res !== 0) {
+      return Response.json({
+        status: "error",
+        error: this.stderr.join("\n"),
+      });
+    }
 
     const out = mrbc.FS.readFile("/output.mrb");
-    this.binaryBase64 = out.toBase64();
-    return this.binaryBase64;
+    const binary = out.toBase64();
+    this.binaryBase64 = binary;
+    return Response.json({
+      status: "ok",
+      binary,
+    });
   }
 }
