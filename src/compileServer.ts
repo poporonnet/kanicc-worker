@@ -19,7 +19,6 @@ export class CompileServer extends DurableObject {
     this.stdout = [];
     this.stderr = [];
     this.compiled = undefined;
-    console.log("aaa!");
   }
 
   async getSource(): Promise<string | undefined> {
